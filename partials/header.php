@@ -28,7 +28,7 @@ http://www.templatemo.com/tm-488-classic
 <div class="tm-header">
     <div class="container-fluid">
         <div class="tm-header-inner">
-            <a href="#" class="navbar-brand tm-site-name">Classic</a>
+            <a href="#" class="navbar-brand tm-site-name">FOTOTLAČ</a>
             
             <!-- navbar -->
             <nav class="navbar tm-main-nav">
@@ -39,12 +39,18 @@ http://www.templatemo.com/tm-488-classic
                 
                 <div class="collapse navbar-toggleable-sm" id="tmNavbar">
                     <ul class="nav navbar-nav">
-                        <li class="nav-item active">
-                            <a href="index.html" class="nav-link">Domov</a>
-                        </li>
-                        <li class="nav-item">
-                            <a href="about.html" class="nav-link">Prihlásiť sa</a>
-                        </li>
+                        <?php
+                            $stranky = array("index.php" => "Domov",
+                                            "login.php" => "Prihlásiť sa");
+
+                            foreach($stranky as $subor => $nazov) {
+                                echo "<li class=\"nav-item ";
+                                if(basename($_SERVER["PHP_SELF"]) == $subor) {
+                                    echo "active";
+                                }
+                                echo "\"><a href=\"$subor\" class=\"nav-link\">$nazov</a></li>";
+                            }
+                        ?>
                     </ul>
                 </div>
                 
