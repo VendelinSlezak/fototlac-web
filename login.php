@@ -1,9 +1,6 @@
 <?php
     require("partials/header.php");
 ?>
-<div class="tm-contact-img-container">
-    
-</div>
 
 <section class="tm-section">
     <div class="container-fluid">
@@ -12,11 +9,11 @@
 
                 <section>
                     <h3 class="tm-gold-text tm-form-title">Prihlásiť sa</h3>
-                    <p class="tm-form-description">Pokiaľ ešte nemáte účet, vytvorte si ho na stránke <a href="register.php">Registrovať sa</a>.</p> 
+                    <p class="tm-form-description">Pokiaľ ešte nemáte účet, vytvorte si ho na stránke <a href="registration.php">Registrovať sa</a>.</p> 
 
-                    <form action="user_panel.php" method="post" class="tm-contact-form">                                
+                    <form action="panel.php" method="post" class="tm-contact-form">                                
                         <div class="form-group">
-                            <input type="text" id="login_name" name="login_name" class="form-control" placeholder="Užívateľské meno" required/>
+                            <input type="text" id="login_email" name="login_email" class="form-control" placeholder="Email" required/>
                         </div>
                         <div class="form-group">
                             <input type="password" id="login_password" name="login_password" class="form-control" placeholder="Heslo" required/>
