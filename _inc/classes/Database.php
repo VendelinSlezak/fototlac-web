@@ -22,10 +22,6 @@
             $this->pdo = null;
         }
 
-        public function getConnection() {
-            return $this->pdo;
-        }
-
         public function index() {
             $stmt = $this->pdo->prepare("SELECT * FROM user");
             $stmt->execute();
@@ -38,19 +34,16 @@
             return $stmt->fetchColumn();
         }
 
-        public function addUser($name, $email, $password) {
+        public function addUser($email, $password) {
             // validacia udajov - predchadzanie utokom
-            if(strlen($name) > 45) {
-                throw new InvalidArgumentException('Meno je príliš dlhé, maximálna dĺžka je 45 znakov.');
-            }
             if(strlen($email) > 45) {
-                throw new InvalidArgumentException('Email je príliš dlhý, maximálna dĺžka je 45 znakov.');
+                throw new InvalidArgumentException('Email je príliš dlhý, maximálna dĺžka je 45 znakov');
             }
             if(strlen($password) > 72) {
-                throw new InvalidArgumentException('Heslo je príliš dlhé, maximálna dĺžka je 72 znakov.');
+                throw new InvalidArgumentException('Heslo je príliš dlhé, maximálna dĺžka je 72 znakov');
             }
             if(filter_var($email, FILTER_VALIDATE_EMAIL) == false) {
-                throw new InvalidArgumentException('Neplatný email.');
+                throw new InvalidArgumentException('Neplatný email');
             }
 
             // kontrola duplicity
@@ -59,15 +52,19 @@
             $stmt->execute();
             $count_of_users = $stmt->fetchColumn();
             if($count_of_users != 0) {
-                throw new InvalidArgumentException('Užívateľ s týmto emailom už existuje.');
+                throw new InvalidArgumentException('Užívateľ s týmto emailom už existuje');
             }
 
             // pridanie uzivatela do databazy
-            $stmt = $this->pdo->prepare("INSERT INTO user (name, email, password) VALUES (:name, :email, :password)");
-            $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+            $stmt = $this->pdo->prepare("INSERT INTO user (email, password) VALUES (:email, :password)");
             $stmt->bindParam(':email', $email, PDO::PARAM_STR);
             $stmt->bindParam(':password', password_hash($password, PASSWORD_DEFAULT), PDO::PARAM_STR);
-            return $stmt->execute();
+            if($stmt->execute() == false) {
+                throw new PDOException('Zlyhanie databázy');
+            }
+            else {
+                return true;
+            }
         }
 
         public function doesUserExist($email, $password) {

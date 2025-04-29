@@ -19,10 +19,10 @@ USE `fototlac_db` ;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `fototlac_db`.`user` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `name` VARCHAR(45) NOT NULL,
   `email` VARCHAR(45) NOT NULL,
   `password` VARCHAR(255) NOT NULL,
-  PRIMARY KEY (`id`))
+  PRIMARY KEY (`id`),
+  UNIQUE INDEX `email_UNIQUE` (`email` ASC))
 ENGINE = InnoDB;
 
 
@@ -33,7 +33,20 @@ CREATE TABLE IF NOT EXISTS `fototlac_db`.`order` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `processed` TINYINT NOT NULL,
   `user_id` INT NOT NULL,
-  PRIMARY KEY (`id`))
+  `name` VARCHAR(45) NOT NULL,
+  `surname` VARCHAR(45) NOT NULL,
+  `country` VARCHAR(45) NOT NULL,
+  `city` VARCHAR(45) NOT NULL,
+  `postal_code` VARCHAR(45) NOT NULL,
+  `street` VARCHAR(45) NOT NULL,
+  `house_number` VARCHAR(45) NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `fk_order_user_idx` (`user_id` ASC),
+  CONSTRAINT `fk_order_user`
+    FOREIGN KEY (`user_id`)
+    REFERENCES `fototlac_db`.`user` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
@@ -59,7 +72,19 @@ CREATE TABLE IF NOT EXISTS `fototlac_db`.`photo` (
   `size_width_in_mm` INT NOT NULL,
   `size_height_in_mm` INT NOT NULL,
   `photo_type_id` INT NOT NULL,
-  PRIMARY KEY (`id`))
+  PRIMARY KEY (`id`),
+  INDEX `fk_photo_order1_idx` (`order_id` ASC),
+  INDEX `fk_photo_photo_type1_idx` (`photo_type_id` ASC),
+  CONSTRAINT `fk_photo_order1`
+    FOREIGN KEY (`order_id`)
+    REFERENCES `fototlac_db`.`order` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_photo_photo_type1`
+    FOREIGN KEY (`photo_type_id`)
+    REFERENCES `fototlac_db`.`photo_type` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
 
