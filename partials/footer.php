@@ -1,3 +1,14 @@
+<?php
+    if(basename($_SERVER["PHP_SELF"]) != "index.php") {
+        echo '                </section>                      
+
+                        </div>
+                    </div>
+                </div>
+            </section>';
+    }
+?>
+
 <footer class="tm-footer">
     <div class="container-fluid">
         <div class="row">

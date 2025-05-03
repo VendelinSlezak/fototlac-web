@@ -31,21 +31,22 @@ ENGINE = InnoDB;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `fototlac_db`.`order` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `processed` TINYINT NOT NULL,
+  `state` VARCHAR(1) NOT NULL,
   `user_id` INT NOT NULL,
-  `name` VARCHAR(45) NOT NULL,
-  `surname` VARCHAR(45) NOT NULL,
-  `country` VARCHAR(45) NOT NULL,
-  `city` VARCHAR(45) NOT NULL,
-  `postal_code` VARCHAR(45) NOT NULL,
-  `street` VARCHAR(45) NOT NULL,
-  `house_number` VARCHAR(45) NOT NULL,
+  `name` VARCHAR(45) NOT NULL DEFAULT '',
+  `surname` VARCHAR(45) NOT NULL DEFAULT '',
+  `country` VARCHAR(45) NOT NULL DEFAULT '',
+  `city` VARCHAR(45) NOT NULL DEFAULT '',
+  `postal_code` VARCHAR(45) NOT NULL DEFAULT '',
+  `street` VARCHAR(45) NOT NULL DEFAULT '',
+  `house_number` VARCHAR(45) NOT NULL DEFAULT '',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   INDEX `fk_order_user_idx` (`user_id` ASC),
   CONSTRAINT `fk_order_user`
     FOREIGN KEY (`user_id`)
     REFERENCES `fototlac_db`.`user` (`id`)
-    ON DELETE NO ACTION
+    ON DELETE CASCADE
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
@@ -78,12 +79,12 @@ CREATE TABLE IF NOT EXISTS `fototlac_db`.`photo` (
   CONSTRAINT `fk_photo_order1`
     FOREIGN KEY (`order_id`)
     REFERENCES `fototlac_db`.`order` (`id`)
-    ON DELETE NO ACTION
+    ON DELETE CASCADE
     ON UPDATE NO ACTION,
   CONSTRAINT `fk_photo_photo_type1`
     FOREIGN KEY (`photo_type_id`)
     REFERENCES `fototlac_db`.`photo_type` (`id`)
-    ON DELETE NO ACTION
+    ON DELETE CASCADE
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 

@@ -1,3 +1,8 @@
+<?php
+    // inicializujeme sedenie
+    session_start();
+?>
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -42,6 +47,11 @@ http://www.templatemo.com/tm-488-classic
                         <?php
                             $stranky = array("index.php" => "Domov",
                                             "login.php" => "Prihlásiť sa");
+                            if(isset($_SESSION['logged_in']) == true && $_SESSION['logged_in'] === true) {
+                                $stranky = array("index.php" => "Domov",
+                                                "panel.php" => "Objednávky",
+                                                "logout.php" => "Odhlásiť sa");
+                            }
 
                             foreach($stranky as $subor => $nazov) {
                                 echo "<li class=\"nav-item ";
@@ -59,3 +69,14 @@ http://www.templatemo.com/tm-488-classic
         </div>                                  
     </div>            
 </div>
+
+<?php
+    if(basename($_SERVER["PHP_SELF"]) != "index.php") {
+        echo '<section class="tm-section">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12 col-xl-12">
+            
+                            <section>';
+    }
+?>
