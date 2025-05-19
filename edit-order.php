@@ -1,5 +1,4 @@
 <?php
-    require("_inc/classes/Database.php");
     require("partials/header.php");
 
     // skontrolujeme ci je uzivatel prihlaseny
@@ -57,7 +56,7 @@
 </p>
 <p class="tm-form-description">
     <button class="btn btn-primary" onclick="location.href='create-photo.php?order_id=<?= $orderid ?>'">Pridať novú fotku</button>
-    <button class="btn btn-primary" onclick="location.href='send_order.php'">Odoslať objednávku</button>
+    <button class="btn btn-primary" onclick="location.href='send-order-form.php?order_id=<?= $orderid ?>'">Odoslať objednávku</button>
 </p>
 
 <?php

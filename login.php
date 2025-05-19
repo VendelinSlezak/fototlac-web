@@ -1,5 +1,4 @@
 <?php
-    require("_inc/classes/Database.php");
     require("partials/header.php");
 ?>
 
@@ -23,7 +22,17 @@
                 $user_id = $db->getUserId($_POST['login_email']); // TODO: spracovat potencionalnu chybu
                 $_SESSION['user_id'] = $user_id["id"];
 
-                // presmerujeme uzivatela na uzivatelsky panel
+                // zistime ci je uzivatel admin
+                if($db->isUserAdmin($_SESSION['user_id']) == true) {
+                    $_SESSION['admin'] = true;
+                    header("Location: admin-panel.php");
+                    exit;
+                }
+                else {
+                    $_SESSION['admin'] = false;
+                }
+
+                // ak nie, presmerujeme uzivatela na uzivatelsky panel
                 header("Location: panel.php");
                 exit;
             }

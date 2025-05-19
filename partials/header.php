@@ -1,6 +1,9 @@
 <?php
     // inicializujeme sedenie
     session_start();
+
+    // nacitat vsetky skripty
+    include("_inc/Autoload.php");
 ?>
 
 <!DOCTYPE html>
@@ -45,12 +48,21 @@ http://www.templatemo.com/tm-488-classic
                 <div class="collapse navbar-toggleable-sm" id="tmNavbar">
                     <ul class="nav navbar-nav">
                         <?php
-                            $stranky = array("index.php" => "Domov",
-                                            "login.php" => "Prihlásiť sa");
                             if(isset($_SESSION['logged_in']) == true && $_SESSION['logged_in'] === true) {
-                                $stranky = array("index.php" => "Domov",
+                                if($_SESSION['admin'] == true) {
+                                    $stranky = array("index.php" => "Domov",
+                                                "admin-panel.php" => "Panel",
+                                                "logout.php" => "Odhlásiť sa");
+                                }
+                                else {
+                                    $stranky = array("index.php" => "Domov",
                                                 "panel.php" => "Objednávky",
                                                 "logout.php" => "Odhlásiť sa");
+                                }
+                            }
+                            else {
+                                $stranky = array("index.php" => "Domov",
+                                                 "login.php" => "Prihlásiť sa");
                             }
 
                             foreach($stranky as $subor => $nazov) {

@@ -1,5 +1,4 @@
 <?php
-    require("_inc/classes/Database.php");
     require("partials/header.php");
 
     // skontrolujeme ci je uzivatel prihlaseny
@@ -31,17 +30,21 @@
 
         //TODO: skontrolovat ci je fotka v objednavke
 
-        // TODO: pridat velkosti do databazy
-        $sizes = [
-            'A5' => [148, 210],
-            'A4' => [210, 297],
-            'A3' => [297, 420]
-        ];
-        if (!isset($sizes[$_POST['size']])) {
+        // najst velkost fotky
+        $sizes = $db->getPhotoSizes();
+        $selectedSize = null;
+        foreach ($sizes as $size) {
+            if ($size['name'] === $_POST['size']) {
+                $selectedSize = $size;
+                break;
+            }
+        }
+        if (!$selectedSize) {
             echo "Neznáma veľkosť fotky.";
             exit;
         }
-        [$width, $height] = $sizes[$_POST['size']];
+        $width = $selectedSize['width'];
+        $height = $selectedSize['height'];
 
         // aktualizovat udaje fotky
         $status = $db->editPhotoInfo($userid, $orderid, $photoid, $_POST['copies'], $width, $height , $_POST['paper_type']);
@@ -53,15 +56,19 @@
 
     $photo_info = $db->getPhotoInfo($userid, $orderid, $photoid);
 
-    // TODO: velkost do databazy
-    // Určujeme veľkosť na základe šírky a výšky
-    $photo_size = '';
-    if ($photo_info['size_width_in_mm'] == 148 && $photo_info['size_height_in_mm'] == 210) {
-        $photo_size = 'A5';
-    } elseif ($photo_info['size_width_in_mm'] == 210 && $photo_info['size_height_in_mm'] == 297) {
-        $photo_size = 'A4';
-    } elseif ($photo_info['size_width_in_mm'] == 297 && $photo_info['size_height_in_mm'] == 420) {
-        $photo_size = 'A3';
+    // zistit velkost na zaklade databazy
+    $photo_sizes = $db->getPhotoSizes();
+    $photo_size = null;
+    foreach ($photo_sizes as $size) {
+        if ($size['width'] == $photo_info['size_width_in_mm']
+            && $size['height'] == $photo_info['size_height_in_mm']) {
+            $photo_size = $size['name'];
+            break;
+        }
+    }
+    if (!$photo_size) {
+        $photo_size = "Neznáma veľkosť";
+        exit;
     }
 ?>
 

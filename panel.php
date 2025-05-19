@@ -31,7 +31,7 @@
     }
 ?>
 
-<h3 class="tm-gold-text tm-form-title">Rozpracované objednávky</h3>
+<h3 class="tm-gold-text tm-form-title">Objednávky</h3>
 <p class="tm-form-description">
     <?php
         $orders = $db->getUserOrders($userid);
@@ -52,7 +52,12 @@
                 echo '<td>' . $order['id'] . '</td>';
                 echo '<td >' . $order['created_at'] . '</td>';
                 echo '<td>' . $stav . '</td>';
-                echo '<td> <a href="edit-order.php?edit_order=' . $order['id'] . '">Upraviť</a> <a href="?delete_order=' . $order['id'] . '">Odstrániť</a> </td>';
+                if($order['state'] == "N") {
+                    echo '<td> <a href="edit-order.php?edit_order=' . $order['id'] . '">Upraviť</a> <a href="?delete_order=' . $order['id'] . '">Odstrániť</a> </td>';
+                }
+                else {
+                    echo '<td> </td>';
+                }
                 echo '</tr>';
             }
 

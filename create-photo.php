@@ -1,5 +1,4 @@
 <?php
-    require("_inc/classes/Database.php");
     require("partials/header.php");
 
     // skontrolujeme ci je uzivatel prihlaseny
@@ -12,6 +11,7 @@
     $db = new Database();
     $userid = $_SESSION["user_id"];
     $photo_types = $db->getPhotoTypes();
+    $photo_sizes = $db->getPhotoSizes();
     if($_SERVER['REQUEST_METHOD'] === 'GET') {
         $orderid = $_GET['order_id'];
     }
@@ -31,16 +31,20 @@
         $orderid = $_POST['order_id'];
 
         // nastavit velkost fotky
-        $sizes = [
-            'A5' => [148, 210],
-            'A4' => [210, 297],
-            'A3' => [297, 420]
-        ];
-        if (!isset($sizes[$_POST['size']])) {
+        $sizes = $db->getPhotoSizes();
+        $selectedSizeId = null;
+        foreach ($sizes as $size) {
+            if ($size['id'] == $_POST['size']) {
+                $selectedSizeId = $size;
+                break;
+            }
+        }
+        if (!$selectedSizeId) {
             echo "Neznáma veľkosť fotky.";
             exit;
         }
-        [$width, $height] = $sizes[$_POST['size']];
+        $width = $selectedSizeId['width'];
+        $height = $selectedSizeId['height'];
 
         // Nahranie fotky
         $photo = $_FILES['photo'];
@@ -62,13 +66,7 @@
         // vlozime fotku do databazy
         $photo_type = intval($_POST['paper_type']);
         $copies = intval($_POST['copies']);
-        echo "orderid: $orderid <br>";
-        echo "photo_type: $photo_type <br>";
-        echo "photoName: $photoName <br>";
-        echo "copies: $copies <br>";
-        echo "width: $width <br>";
-        echo "height: $height <br>";
-        $db->createNewPhoto($orderid, intval($_POST['paper_type']), $photoName, intval($_POST['copies']), $width, $height); // TODO: skontrolovat error
+        $db->createNewPhoto($orderid, $photo_type, $selectedSizeId, $photoName, $copies, $width, $height); // TODO: skontrolovat error
 
         // otvorit objednavku
         header("Location: edit-order.php?edit_order=" . $orderid);
@@ -97,9 +95,9 @@
         <div>
             <label for="size">Veľkosť:</label>
             <select name="size" id="size">
-                <option value="A5">A5</option>
-                <option value="A4">A4</option>
-                <option value="A3">A3</option>
+                <?php foreach ($photo_sizes as $photo_size): ?>
+                    <option value="<?= $photo_size['id'] ?>"><?= $photo_size['name'] ?></option>
+                <?php endforeach; ?>
             </select>
         </div>
 

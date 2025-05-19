@@ -1,36 +1,29 @@
 <?php
-    require("_inc/classes/Database.php");
     require("partials/header.php");
 ?>
 
 <h3 class="tm-gold-text tm-form-title">Registrovať sa</h3>
 
 <?php
+    // POST znamena ze mame registrovat noveho uzivatela
     if($_SERVER['REQUEST_METHOD'] === 'POST') {
         if(isset($_POST['register_email'], $_POST['register_password'])) {
             // pripojime sa ku databaze
             $db = new Database();
+            $reg = new Registration($db);
 
-            // skontrolujeme ci je este v databaze miesto
-            // max 10000 pouzivatelov, treba doladit podla moznosti servera
-            $user_count = $db->getUserCount();
-            if($user_count >= 10000) {
-                echo '<div class="alert alert-danger" role="alert">Chyba: Maximálny počet užívateľov je registrovaných</div>';
+            // pridame uzivatela do databazy
+            try {
+                $reg->addUser($_POST['register_email'], $_POST['register_password']);
+                header("Location: complete_registration.php");
+                exit;
             }
-            else {
-                // pridame uzivatela do databazy
-                try {
-                    $db->addUser($_POST['register_email'], $_POST['register_password']);
-                    header("Location: complete_registration.php");
-                    exit;
-                }
-                catch (Exception $e) {
-                    echo '<div class="alert alert-danger" role="alert">Chyba: '.$e->getMessage().'</div>';
-                }
+            catch (Exception $e) {
+                $reg->error($e->getMessage());
             }
         }
         else {
-            echo '<div class="alert alert-danger" role="alert">Chyba: Neboli prijaté všetky údaje z formuláru</div>';
+            $reg->error("Neboli prijaté všetky údaje z formuláru");
         }
     }
 ?>

@@ -22,49 +22,20 @@
             $this->pdo = null;
         }
 
+        public function getPDO() {
+            return $this->pdo;
+        }
+
         public function index() {
             $stmt = $this->pdo->prepare("SELECT * FROM user");
             $stmt->execute();
             return $stmt->fetch(PDO::FETCH_ASSOC);
         }
 
-        public function getUserCount() {
-            $stmt = $this->pdo->prepare("SELECT COUNT(*) AS count FROM user");
+        public function getAllSendedOrders() {
+            $stmt = $this->pdo->prepare("SELECT * FROM `order` WHERE state = 'O' ORDER BY created_at");
             $stmt->execute();
-            return $stmt->fetchColumn();
-        }
-
-        public function addUser($email, $password) {
-            // validacia udajov - predchadzanie utokom
-            if(strlen($email) > 45) {
-                throw new InvalidArgumentException('Email je príliš dlhý, maximálna dĺžka je 45 znakov');
-            }
-            if(strlen($password) > 72) {
-                throw new InvalidArgumentException('Heslo je príliš dlhé, maximálna dĺžka je 72 znakov');
-            }
-            if(filter_var($email, FILTER_VALIDATE_EMAIL) == false) {
-                throw new InvalidArgumentException('Neplatný email');
-            }
-
-            // kontrola duplicity
-            $stmt = $this->pdo->prepare("SELECT COUNT(*) AS count FROM user WHERE email = :email");
-            $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-            $stmt->execute();
-            $count_of_users = $stmt->fetchColumn();
-            if($count_of_users != 0) {
-                throw new InvalidArgumentException('Užívateľ s týmto emailom už existuje');
-            }
-
-            // pridanie uzivatela do databazy
-            $stmt = $this->pdo->prepare("INSERT INTO user (email, password) VALUES (:email, :password)");
-            $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-            $stmt->bindParam(':password', password_hash($password, PASSWORD_DEFAULT), PDO::PARAM_STR);
-            if($stmt->execute() == false) {
-                throw new PDOException('Zlyhanie databázy');
-            }
-            else {
-                return true;
-            }
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
         public function doesUserExist($email, $password) {
@@ -161,27 +132,60 @@
             return $stmt->fetchAll();
         }
 
+        public function getOrderDetails($orderid) {
+            $stmt = $this->pdo->prepare("SELECT * FROM `order` JOIN user ON `order`.user_id = user.id WHERE `order`.id = :order_id");
+            $stmt->bindParam(':order_id', $orderid, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetch(PDO::FETCH_ASSOC);
+        }
+
+        public function getOrderPhotosAdmin($orderid) {
+            $stmt = $this->pdo->prepare("   SELECT photo.id AS photo_id, file_name, copies, size_width_in_mm, size_height_in_mm, photo_type.name AS paper_type
+                                            FROM photo
+                                            JOIN photo_type ON photo_type.id = photo.photo_type_id
+                                            WHERE order_id = :order_id");
+            $stmt->bindParam(':order_id', $orderid, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetchAll();
+        }
+
+        public function setOrderAsDone($orderid) {
+            $stmt = $this->pdo->prepare("   UPDATE `order`
+                                            SET `state` = 'S'
+                                            WHERE id = :order_id");
+            $stmt->bindParam(':order_id', $orderid, PDO::PARAM_INT);
+            return $stmt->execute();
+        }
+
         public function getPhotoTypes() {
             $stmt = $this->pdo->prepare("SELECT * FROM photo_type");
             $stmt->execute();
             return $stmt->fetchAll();
         }
 
-        public function createNewPhoto($orderid, $photo_type_id, $file_name, $copies, $width, $height) {
+        public function getPhotoSizes() {
+            $stmt = $this->pdo->prepare("SELECT * FROM photo_size");
+            $stmt->execute();
+            return $stmt->fetchAll();
+        }
+
+        public function createNewPhoto($orderid, $photo_type_id, $photo_size_id, $file_name, $copies, $width, $height) {
             $stmt = $this->pdo->prepare("INSERT INTO photo (
                 `file_name`, 
                 `copies`, 
                 `order_id`, 
                 `size_width_in_mm`, 
                 `size_height_in_mm`, 
-                `photo_type_id`
+                `photo_type_id`,
+                `photo_size_id`
             ) VALUES (
                 :file_name, 
                 :copies, 
                 :order_id, 
                 :size_width_in_mm, 
                 :size_height_in_mm, 
-                :photo_type_id
+                :photo_type_id,
+                :photo_size_id
             )");
             $stmt->bindParam(':file_name', $file_name);
             $stmt->bindParam(':copies', $copies, PDO::PARAM_INT);
@@ -189,6 +193,7 @@
             $stmt->bindParam(':size_width_in_mm', $width, PDO::PARAM_INT);
             $stmt->bindParam(':size_height_in_mm', $height, PDO::PARAM_INT);
             $stmt->bindParam(':photo_type_id', $photo_type_id, PDO::PARAM_INT);
+            $stmt->bindParam(':photo_size_id', $photo_size_id, PDO::PARAM_INT);
             return $stmt->execute();
         }
 
@@ -243,6 +248,52 @@
             $stmt->bindParam(':height', $height, PDO::PARAM_INT);
             $stmt->bindParam(':photo_type_id', $photo_type_id, PDO::PARAM_INT);
             return $stmt->execute();
+        }
+
+        public function sendOrder($userid, $orderid, $name, $surname, $country, $city, $postalCode, $street, $houseNumber) {
+            if ($this->haveUserIdOrderId($userid, $orderid) == false) {
+                return false;
+            }
+
+            $stmt = $this->pdo->prepare("
+                UPDATE `order` 
+                SET name = :name, 
+                    surname = :surname, 
+                    country = :country, 
+                    city = :city, 
+                    postal_code = :postalCode, 
+                    street = :street, 
+                    house_number = :houseNumber,
+                    state = 'O'
+                WHERE user_id = :userid AND id = :orderid
+            ");
+            $stmt->bindParam(':userid', $userid, PDO::PARAM_INT);
+            $stmt->bindParam(':orderid', $orderid, PDO::PARAM_INT);
+            $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+            $stmt->bindParam(':surname', $surname, PDO::PARAM_STR);
+            $stmt->bindParam(':country', $country, PDO::PARAM_STR);
+            $stmt->bindParam(':city', $city, PDO::PARAM_STR);
+            $stmt->bindParam(':postalCode', $postalCode, PDO::PARAM_STR);
+            $stmt->bindParam(':street', $street, PDO::PARAM_STR);
+            $stmt->bindParam(':houseNumber', $houseNumber, PDO::PARAM_STR);
+            return $stmt->execute();
+        }
+
+        public function isUserAdmin($userid) {
+            $stmt = $this->pdo->prepare("
+                SELECT *
+                FROM user
+                WHERE id = :userid
+            ");
+            $stmt->bindParam(':userid', $userid, PDO::PARAM_INT);
+            $stmt->execute();
+            $user = $stmt->fetch();
+            if($user['email'] == 'admin@admin.sk') {
+                return true;
+            }
+            else {
+                return false;
+            }
         }
     }
 ?>
