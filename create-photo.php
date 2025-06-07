@@ -2,74 +2,95 @@
     require("partials/header.php");
 
     // skontrolujeme ci je uzivatel prihlaseny
-    if(isset($_SESSION['logged_in']) == false || $_SESSION['logged_in'] !== true) {
-        header("Location: login.php");
-        exit;
-    }
+    $auth->continueIfUserLoggedIn();
 
     //  vytvorime spojenie s databazou
     $db = new Database();
+    $user = new User($db);
     $userid = $_SESSION["user_id"];
-    $photo_types = $db->getPhotoTypes();
-    $photo_sizes = $db->getPhotoSizes();
-    if($_SERVER['REQUEST_METHOD'] === 'GET') {
-        $orderid = $_GET['order_id'];
-    }
+    $photo_sizes = $user->getPhotoSizes(); // pouzijeme aj pri nahravani fotky, aj pri formulari na nahranie
 
-    // zistime ci uzivatel nahrava fotku
-    if($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // uzivatel nahrava fotku
+
         // overenie ci mame vsetky potrebne data
         if (!isset($_FILES['photo']) ||
             !isset($_POST['copies']) ||
             !isset($_POST['size']) ||
-            !isset($_POST['paper_type'])
-            || !isset($_POST['order_id']) ) {
-            echo "Chýbajúce údaje vo formulári";
+            !isset($_POST['paper_type']) ||
+            !isset($_POST['order_id']) ) {
+            echo '<div class="alert alert-danger" role="alert">Chýbajúce údaje vo formulári</div>';
+            require("partials/footer.php");
             exit;
         }
 
+        // nacitame order id
         $orderid = $_POST['order_id'];
+        $user->continueIfUserHasOrder($userid, $orderid);
 
         // nastavit velkost fotky
-        $sizes = $db->getPhotoSizes();
         $selectedSizeId = null;
-        foreach ($sizes as $size) {
+        foreach ($photo_sizes as $size) {
             if ($size['id'] == $_POST['size']) {
                 $selectedSizeId = $size;
                 break;
             }
         }
-        if (!$selectedSizeId) {
-            echo "Neznáma veľkosť fotky.";
+        if ($selectedSizeId == null) {
+            echo '<div class="alert alert-danger" role="alert">Neznáma veľkosť fotky</div>';
+            require("partials/footer.php");
             exit;
         }
         $width = $selectedSizeId['width'];
         $height = $selectedSizeId['height'];
 
-        // Nahranie fotky
-        $photo = $_FILES['photo'];
-        if ($photo['error'] !== UPLOAD_ERR_OK) {
-            echo "Chyba pri nahrávaní fotky.";
+        // nahranie fotky
+        if(isset($_FILES['photo'])) {
+            $photo = $_FILES['photo'];
+        }
+        else {
+            $photo = null;
+        }
+        if ($photo == null || $photo['error'] !== UPLOAD_ERR_OK) {
+            echo '<div class="alert alert-danger" role="alert">Chyba pri nahrávaní fotky</div>';
+            require("partials/footer.php");
             exit;
         }
         if (!in_array($photo['type'], ['image/jpeg', 'image/png', 'image/gif', 'image/webp'])) {
-            echo "Nepodporovaný typ obrázku.";
+            echo '<div class="alert alert-danger" role="alert">Nepodporovaný typ obrázku</div>';
+            require("partials/footer.php");
             exit;
         }
-        $photoName = uniqid() . '.' . strtolower(pathinfo($photo['name'], PATHINFO_EXTENSION));
-        $photoPath = "photos/" . $photoName;
+        $photoName = uniqid() . '.' . strtolower(pathinfo($photo['name'], PATHINFO_EXTENSION)); // generuje nazov unikatneid.priponasuboru
+        $photoPath = "photos/" . $photoName; // v tomto priecinku su vsetky fotky
         if (!move_uploaded_file($photo['tmp_name'], $photoPath)) {
-            echo "Nepodarilo sa uložiť súbor.";
+            echo '<div class="alert alert-danger" role="alert">Nepodarilo sa uložiť súbor</div>';
+            require("partials/footer.php");
             exit;
         }
 
         // vlozime fotku do databazy
-        $photo_type = intval($_POST['paper_type']);
-        $copies = intval($_POST['copies']);
-        $db->createNewPhoto($orderid, $photo_type, $selectedSizeId, $photoName, $copies, $width, $height); // TODO: skontrolovat error
+        $photo_type = $_POST['paper_type'];
+        $copies = $_POST['copies'];
+        $createSuccess = $user->createNewPhoto($orderid, $photo_type, $selectedSizeId, $photoName, $copies, $width, $height);
+        if($createSuccess == false) {
+            echo '<div class="alert alert-danger" role="alert">Chyba pri vytváraní položky v databáze</div>';
+            require("partials/footer.php");
+            exit;
+        }
 
         // otvorit objednavku
         header("Location: edit-order.php?edit_order=" . $orderid);
+        exit;
+    }
+    else if($_SERVER['REQUEST_METHOD'] === 'GET') {
+        $orderid = $_GET['order_id'];
+        $user->continueIfUserHasOrder($userid, $orderid);
+        $photo_types = $user->getPhotoTypes();
+    }
+    else {
+        echo '<div class="alert alert-danger" role="alert">Nebolo prijaté ID objednávky</div>';
+        require("partials/footer.php");
         exit;
     }
 ?>

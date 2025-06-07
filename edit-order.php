@@ -2,35 +2,42 @@
     require("partials/header.php");
 
     // skontrolujeme ci je uzivatel prihlaseny
-    if(isset($_SESSION['logged_in']) == false || $_SESSION['logged_in'] !== true) {
-        header("Location: login.php");
-        exit;
-    }
-
-    // skontrolujeme ci uzivatel dopytuje objednavku
-    if(isset($_GET['edit_order']) == false) {
-        echo '<div class="alert alert-danger" role="alert">Chyba: Neexistujúca objednávka</div>';
-        exit; // TODO:
-    }
+    $auth->continueIfUserLoggedIn();
 
     //  vytvorime spojenie s databazou
     $db = new Database();
+    $user = new User($db);
+    $userid = $_SESSION["user_id"];
+
+    // skontrolujeme ci mame cislo objednavky
+    if(isset($_GET['edit_order']) == false) {
+        echo '<div class="alert alert-danger" role="alert">Chyba: Objednávka nie je špecifikovaná</div>';
+        require("partials/footer.php");
+        exit;
+    }
+
+    // vytvorime spojenie s databazou
+    $db = new Database();
+    $user = new User($db);
     $userid = $_SESSION["user_id"];
     $orderid = $_GET['edit_order'];
 
-    // TODO: skontrolujeme ci objednavka existuje
+    // skontrolujeme ci uzivatel ma tuto objednavku
+    $user->continueIfUserHasOrder($userid, $orderid);
 
     // skontrolujeme ci uzivatel chce vymazat fotku
     if(isset($_GET['delete_photo'])) {
-        // TODO: skontrolovat chyby
-        $db->deletePhoto($userid, $orderid, $_GET['delete_photo']);
+        $deleteSuccess = $user->deletePhoto($userid, $orderid, $_GET['delete_photo']);
+        if($deleteSuccess == false) {
+            echo '<div class="alert alert-danger" role="alert">Nepodarilo sa vymazať fotku</div>';
+        }
     }
 ?>
 
 <h3 class="tm-gold-text tm-form-title">Objednávka <?php echo "{$_GET['edit_order']}"; ?> </h3>
 <p class="tm-form-description">
     <?php
-        $photos = $db->getOrderPhotos($userid, $orderid);
+        $photos = $user->getOrderPhotos($userid, $orderid);
 
         if(count($photos) == 0) {
             echo "Táto objednávka neobsahuje žiadne fotky.";
@@ -41,12 +48,12 @@
 
             foreach ($photos as $photo) {
                 echo '<tr>';
-                echo '<td><img width="30" height="30" src="photos/' . $photo["file_name"] . '"</td>'; // TODO: zobrazit fotku
-                echo '<td >' . $photo["copies"] . '</td>';
-                echo '<td>' . $photo["paper_type"] . '</td>';
-                echo '<td>' . $photo["size_width_in_mm"] . 'x' . $photo["size_height_in_mm"] .'</td>';
-                echo '<td>' . $photo["price"] . ' €</td>';
-                echo '<td> <a href="edit-photo.php?order_id=' . $orderid . '&photo_id=' . $photo['photo_id'] . '">Upraviť</a> <a href="?edit_order=' . $orderid . '&delete_photo=' . $photo['photo_id'] . '">Odstrániť</a> </td>';
+                echo '<td><img width="30" height="30" src="photos/' . htmlspecialchars($photo["file_name"]) . '"</td>'; // TODO: zobrazit fotku
+                echo '<td >' . htmlspecialchars($photo["copies"]) . '</td>';
+                echo '<td>' . htmlspecialchars($photo["paper_type"]) . '</td>';
+                echo '<td>' . htmlspecialchars($photo["size_width_in_mm"]) . 'x' . htmlspecialchars($photo["size_height_in_mm"]) .'</td>';
+                echo '<td>' . htmlspecialchars($photo["price"]) . ' €</td>';
+                echo '<td> <a href="edit-photo.php?order_id=' . $orderid . '&photo_id=' . htmlspecialchars($photo['photo_id']) . '">Upraviť</a> <a href="?edit_order=' . $orderid . '&delete_photo=' . htmlspecialchars($photo['photo_id']) . '">Odstrániť</a> </td>';
                 echo '</tr>';
             }
 

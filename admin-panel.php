@@ -1,27 +1,19 @@
 <?php
     require("partials/header.php");
 
-    // skontrolujeme ci je uzivatel prihlaseny
-    if(isset($_SESSION['logged_in']) == false || $_SESSION['logged_in'] !== true) {
-        header("Location: login.php");
-        exit;
-    }
+    // skontrolujeme ci je prihlaseny admin
+    $auth->continueIfAdminLoggedIn();
 
-    //  vytvorime spojenie s databazou
+    // vytvorime spojenie s databazou
     $db = new Database();
+    $admin = new Admin($db);
     $userid = $_SESSION["user_id"];
-
-    // skontrolujeme ci je pouzivatel admin
-    if($db->isUserAdmin($userid) == false) {
-        header("Location: panel.php");
-        exit;
-    }
 ?>
 
 <h3 class="tm-gold-text tm-form-title">Prijaté objednávky</h3>
 <p class="tm-form-description">
     <?php
-        $orders = $db->getAllSendedOrders();
+        $orders = $admin->getAllSendedOrders();
 
         if(count($orders) == 0) {
             echo "Aktuálne žiadne nespracované objednávky od zákazníkov.";

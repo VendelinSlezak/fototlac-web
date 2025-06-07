@@ -3,7 +3,10 @@
     session_start();
 
     // nacitat vsetky skripty
-    include("_inc/Autoload.php");
+    include("_inc/autoload.php");
+
+    // autentifikaciu potrebujeme vzdy na vykreslenie odkazov
+    $auth = new Authenticate();
 ?>
 
 <!DOCTYPE html>
@@ -48,17 +51,15 @@ http://www.templatemo.com/tm-488-classic
                 <div class="collapse navbar-toggleable-sm" id="tmNavbar">
                     <ul class="nav navbar-nav">
                         <?php
-                            if(isset($_SESSION['logged_in']) == true && $_SESSION['logged_in'] === true) {
-                                if($_SESSION['admin'] == true) {
-                                    $stranky = array("index.php" => "Domov",
-                                                "admin-panel.php" => "Panel",
-                                                "logout.php" => "Odhlásiť sa");
-                                }
-                                else {
-                                    $stranky = array("index.php" => "Domov",
-                                                "panel.php" => "Objednávky",
-                                                "logout.php" => "Odhlásiť sa");
-                                }
+                            if($auth->isUserLoggedIn()) {
+                                $stranky = array("index.php" => "Domov",
+                                                 "user-panel.php" => "Objednávky",
+                                                 "logout.php" => "Odhlásiť sa");
+                            }
+                            else if($auth->isAdminLoggedIn()) {
+                                $stranky = array("index.php" => "Domov",
+                                                 "admin-panel.php" => "Panel",
+                                                 "logout.php" => "Odhlásiť sa");
                             }
                             else {
                                 $stranky = array("index.php" => "Domov",

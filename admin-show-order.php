@@ -1,33 +1,25 @@
 <?php
     require("partials/header.php");
 
-    // skontrolujeme ci je uzivatel prihlaseny
-    if(isset($_SESSION['logged_in']) == false || $_SESSION['logged_in'] !== true) {
-        header("Location: login.php");
-        exit;
-    }
+    // skontrolujeme ci je prihlaseny admin
+    $auth->continueIfAdminLoggedIn();
 
-    //  vytvorime spojenie s databazou
+    // vytvorime spojenie s databazou
     $db = new Database();
+    $admin = new Admin($db);
     $userid = $_SESSION["user_id"];
     $orderid = $_GET["order_id"];
 
-    // skontrolujeme ci je pouzivatel admin
-    if($db->isUserAdmin($userid) == false) {
-        header("Location: panel.php");
-        exit;
-    }
-
     // zistie ci admin nechce akceptovat objednavku ako spracovanu
     if(isset($_GET['accept_order_id'])) {
-        $db->setOrderAsDone($_GET['accept_order_id']);
+        $admin->setOrderAsDone($_GET['accept_order_id']);
         header("Location: admin-panel.php");
         exit;
     }
 
     // nacitame objednavku
-    $photos = $db->getOrderPhotosAdmin($orderid);
-    $orderInfo = $db->getOrderDetails($orderid);
+    $photos = $admin->getOrderPhotos($orderid);
+    $orderInfo = $admin->getOrderDetails($orderid);
 ?>
 
 <h3 class="tm-gold-text tm-form-title">Objednávka <?php echo "{$_GET['order_id']}"; ?> </h3>

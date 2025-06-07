@@ -1,5 +1,9 @@
 <?php
     require("partials/header.php");
+
+    // pripojime sa ku databaze
+    $db = new Database();
+    $login = new Login($db);
 ?>
 
 <h3 class="tm-gold-text tm-form-title">Prihlásiť sa</h3>
@@ -8,37 +12,29 @@
 <?php
     if($_SERVER['REQUEST_METHOD'] === 'POST') {
         if(isset($_POST['login_email'], $_POST['login_password'])) {
-            // pripojime sa ku databaze
-            $db = new Database();
-
             // overime ci tento uzivatel existuje
-            // TODO: vyhodit priamu chybu co sa presne stalo
-            if($db->doesUserExist($_POST['login_email'], $_POST['login_password']) == false) {
-                echo '<div class="alert alert-danger" role="alert">Chyba: Neplatné údaje</div>';
+            if($login->doesUserExist($_POST['login_email'], $_POST['login_password']) == false) {
+                $login->error("Neplatné údaje");
             }
             else {
                 // inicializujeme sedenie na prihlasenie
-                $_SESSION['logged_in'] = true;
-                $user_id = $db->getUserId($_POST['login_email']); // TODO: spracovat potencionalnu chybu
+                $user_id = $login->getUserId($_POST['login_email']);
                 $_SESSION['user_id'] = $user_id["id"];
 
-                // zistime ci je uzivatel admin
-                if($db->isUserAdmin($_SESSION['user_id']) == true) {
+                // zistime ci je uzivatel admin alebo user
+                if($login->isUserAdmin($_SESSION['user_id']) == true) {
                     $_SESSION['admin'] = true;
                     header("Location: admin-panel.php");
-                    exit;
                 }
                 else {
                     $_SESSION['admin'] = false;
+                    header("Location: user-panel.php");
                 }
-
-                // ak nie, presmerujeme uzivatela na uzivatelsky panel
-                header("Location: panel.php");
                 exit;
             }
         }
         else {
-            echo '<div class="alert alert-danger" role="alert">Chyba: Neboli prijaté všetky údaje z formuláru</div>';
+            $login->error("Neboli prijaté všetky údaje z formuláru");
         }
     }
 ?>
