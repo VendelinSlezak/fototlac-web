@@ -8,7 +8,6 @@
     $db = new Database();
     $user = new User($db);
     $userid = $_SESSION["user_id"];
-    $photo_sizes = $user->getPhotoSizes(); // pouzijeme aj pri nahravani fotky, aj pri formulari na nahranie
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // uzivatel nahrava fotku
@@ -27,22 +26,6 @@
         // nacitame order id
         $orderid = $_POST['order_id'];
         $user->continueIfUserHasOrder($userid, $orderid);
-
-        // nastavit velkost fotky
-        $selectedSizeId = null;
-        foreach ($photo_sizes as $size) {
-            if ($size['id'] == $_POST['size']) {
-                $selectedSizeId = $size;
-                break;
-            }
-        }
-        if ($selectedSizeId == null) {
-            echo '<div class="alert alert-danger" role="alert">Neznáma veľkosť fotky</div>';
-            require("partials/footer.php");
-            exit;
-        }
-        $width = $selectedSizeId['width'];
-        $height = $selectedSizeId['height'];
 
         // nahranie fotky
         if(isset($_FILES['photo'])) {
@@ -70,9 +53,7 @@
         }
 
         // vlozime fotku do databazy
-        $photo_type = $_POST['paper_type'];
-        $copies = $_POST['copies'];
-        $createSuccess = $user->createNewPhoto($orderid, $photo_type, $_POST['size'], $photoName, $copies);
+        $createSuccess = $user->createNewPhoto($orderid, $_POST['paper_type'], $_POST['size'], $photoName, $_POST['copies']);
         if($createSuccess == false) {
             echo '<div class="alert alert-danger" role="alert">Chyba pri vytváraní položky v databáze</div>';
             require("partials/footer.php");
@@ -87,6 +68,7 @@
         $orderid = $_GET['order_id'];
         $user->continueIfUserHasOrder($userid, $orderid);
         $photo_types = $user->getPhotoTypes();
+        $photo_sizes = $user->getPhotoSizes();
     }
     else {
         echo '<div class="alert alert-danger" role="alert">Nebolo prijaté ID objednávky</div>';
@@ -100,19 +82,16 @@
     <form action="create-photo.php" method="POST" enctype="multipart/form-data">
         <input type="hidden" name="order_id" id="order_id" value="<?= $orderid ?>">
 
-        <!-- Nahratie fotky -->
         <div>
             <label for="photo">Fotka:</label>
             <input type="file" name="photo" id="photo" accept="image/*" required>
         </div>
 
-        <!-- Počet kópií -->
         <div>
             <label for="copies">Počet kópií:</label>
             <input type="number" name="copies" id="copies" value="1" min="1" max="100" required>
         </div>
 
-        <!-- Veľkosť fotky -->
         <div>
             <label for="size">Veľkosť:</label>
             <select name="size" id="size">
@@ -122,7 +101,6 @@
             </select>
         </div>
 
-        <!-- Typ papiera -->
         <div>
             <label for="paper_type">Typ papiera:</label>
             <select name="paper_type" id="paper_type" required>

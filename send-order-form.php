@@ -9,6 +9,8 @@
     $user = new User($db);
     $userid = $_SESSION["user_id"];
     $orderid = $_GET['order_id'];
+
+    // skontrolujeme ci uzivatel ma tuto objednavku
     $user->continueIfUserHasOrder($userid, $orderid);
 ?>
 

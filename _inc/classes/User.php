@@ -72,10 +72,6 @@
         }
 
         public function getOrderPhotos($userid, $orderid) {
-            if($this->haveUserIdOrderId($userid, $orderid) == false) {
-                return false;
-            }
-
             $stmt = $this->pdo->prepare("   SELECT photo.id AS photo_id, file_name, copies, photo_size.width AS size_width_in_mm, photo_size.height AS size_height_in_mm, photo_type.name AS paper_type, photo_type.price_of_1x1_mm*photo_size.width*photo_size.height*copies AS price
                                             FROM photo
                                             JOIN photo_type ON photo_type.id = photo.photo_type_id
@@ -87,10 +83,6 @@
         }
 
         public function sendOrder($userid, $orderid, $name, $surname, $country, $city, $postalCode, $street, $houseNumber) {
-            if ($this->haveUserIdOrderId($userid, $orderid) == false) {
-                return false;
-            }
-
             $stmt = $this->pdo->prepare("
                 UPDATE `order` 
                 SET name = :name, 
@@ -122,10 +114,6 @@
         }
 
         public function deleteOrder($userid, $orderid) {
-            if($this->haveUserIdOrderId($userid, $orderid) == false) {
-                return false;
-            }
-
             // vymazeme vsetky fotky
             $stmt = $this->pdo->prepare("SELECT id FROM photo WHERE order_id = :order_id");
             $stmt->bindParam(':order_id', $orderid, PDO::PARAM_INT);
@@ -177,10 +165,6 @@
         }
 
         public function deletePhoto($userid, $orderid, $photoid) {
-            if($this->haveUserIdOrderId($userid, $orderid) == false) {
-                return false;
-            }
-
             // skontrolujeme ci fotka patri k objednavke
             $stmt = $this->pdo->prepare("SELECT order_id FROM photo WHERE id = :photo_id");
             $stmt->bindParam(':photo_id', $photoid, PDO::PARAM_INT);
@@ -209,10 +193,6 @@
         }
 
         public function getPhotoInfo($userid, $orderid, $photoid) {
-            if($this->haveUserIdOrderId($userid, $orderid) == false) {
-                return false;
-            }
-
             $stmt = $this->pdo->prepare("SELECT * FROM photo JOIN photo_size ON photo_size_id = photo_size.id WHERE photo.id = :photo_id");
             $stmt->bindParam(':photo_id', $photoid, PDO::PARAM_INT);
             $stmt->execute();
@@ -220,10 +200,6 @@
         }
 
         public function editPhotoInfo($userid, $orderid, $photoid, $copies, $photo_type_id, $photo_size_id) {
-            if($this->haveUserIdOrderId($userid, $orderid) == false) {
-                return false;
-            }
-
             $stmt = $this->pdo->prepare("UPDATE photo 
                                          SET copies = :copies, 
                                              photo_type_id = :photo_type_id,

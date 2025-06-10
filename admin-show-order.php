@@ -22,7 +22,7 @@
     $orderInfo = $admin->getOrderDetails($orderid);
 ?>
 
-<h3 class="tm-gold-text tm-form-title">Objednávka <?php echo "{$_GET['order_id']}"; ?> </h3>
+<h3 class="tm-gold-text tm-form-title">Objednávka <?= $_GET['order_id'] ?></h3>
 <p class="tm-form-description">
     <?php
         echo '<p>Meno: ' . htmlspecialchars($orderInfo['name']) . '</p>';
@@ -46,7 +46,7 @@
 
             foreach ($photos as $photo) {
                 echo '<tr>';
-                echo '<td><a href="photos/' . htmlspecialchars($photo["file_name"]) . '">Stiahnuť fotku</a></td>'; // TODO: zobrazit fotku
+                echo '<td><a href="photos/' . htmlspecialchars($photo["file_name"]) . '">Stiahnuť fotku</a></td>';
                 echo '<td >' . htmlspecialchars($photo["copies"]) . '</td>';
                 echo '<td>' . htmlspecialchars($photo["paper_type"]) . '</td>';
                 echo '<td>' . htmlspecialchars($photo["size_width_in_mm"]) . 'x' . htmlspecialchars($photo["size_height_in_mm"]) .'</td>';

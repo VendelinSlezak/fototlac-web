@@ -27,6 +27,14 @@
 
     // skontrolujeme ci uzivatel chce vymazat fotku
     if(isset($_GET['delete_photo'])) {
+        // skontrolujeme ci tato fotka patri do tejto objednavky
+        if($user->isPhotoInOrder($orderid, $_GET['delete_photo']) == false) {
+            echo '<div class="alert alert-danger" role="alert">Chyba: Fotka na vymazanie nie je v objednávke</div>';
+            require("partials/footer.php");
+            exit;
+        }
+
+        // vymazeme fotku
         $deleteSuccess = $user->deletePhoto($userid, $orderid, $_GET['delete_photo']);
         if($deleteSuccess == false) {
             echo '<div class="alert alert-danger" role="alert">Nepodarilo sa vymazať fotku</div>';
@@ -34,7 +42,7 @@
     }
 ?>
 
-<h3 class="tm-gold-text tm-form-title">Objednávka <?php echo "{$_GET['edit_order']}"; ?> </h3>
+<h3 class="tm-gold-text tm-form-title">Objednávka <?= $_GET['edit_order'] ?> </h3>
 <p class="tm-form-description">
     <?php
         $photos = $user->getOrderPhotos($userid, $orderid);
@@ -48,7 +56,7 @@
 
             foreach ($photos as $photo) {
                 echo '<tr>';
-                echo '<td><img width="30" height="30" src="photos/' . htmlspecialchars($photo["file_name"]) . '"</td>'; // TODO: zobrazit fotku
+                echo '<td><img width="30" height="30" src="photos/' . htmlspecialchars($photo["file_name"]) . '"</td>';
                 echo '<td >' . htmlspecialchars($photo["copies"]) . '</td>';
                 echo '<td>' . htmlspecialchars($photo["paper_type"]) . '</td>';
                 echo '<td>' . htmlspecialchars($photo["size_width_in_mm"]) . 'x' . htmlspecialchars($photo["size_height_in_mm"]) .'</td>';
