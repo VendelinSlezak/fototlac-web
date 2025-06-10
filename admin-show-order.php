@@ -46,10 +46,10 @@
 
             foreach ($photos as $photo) {
                 echo '<tr>';
-                echo '<td><a href="photos/' . $photo["file_name"] . '">Stiahnuť fotku</a></td>'; // TODO: zobrazit fotku
-                echo '<td >' . $photo["copies"] . '</td>';
-                echo '<td>' . $photo["paper_type"] . '</td>';
-                echo '<td>' . $photo["size_width_in_mm"] . 'x' . $photo["size_height_in_mm"] .'</td>';
+                echo '<td><a href="photos/' . htmlspecialchars($photo["file_name"]) . '">Stiahnuť fotku</a></td>'; // TODO: zobrazit fotku
+                echo '<td >' . htmlspecialchars($photo["copies"]) . '</td>';
+                echo '<td>' . htmlspecialchars($photo["paper_type"]) . '</td>';
+                echo '<td>' . htmlspecialchars($photo["size_width_in_mm"]) . 'x' . htmlspecialchars($photo["size_height_in_mm"]) .'</td>';
                 echo '</tr>';
             }
 

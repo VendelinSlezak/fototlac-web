@@ -60,7 +60,7 @@ http://www.templatemo.com/tm-488-classic
                                 $stranky = array("index.php" => "Domov",
                                                  "admin-panel.php" => "Panel",
                                                  "logout.php" => "Odhlásiť sa");
-                            }
+                            } 
                             else {
                                 $stranky = array("index.php" => "Domov",
                                                  "login.php" => "Prihlásiť sa");

@@ -9,7 +9,7 @@
         public function error($str) {
             echo '<div class="alert alert-danger" role="alert">Chyba: ' . $str . '</div>';
         }
-
+ 
         public function addUser($email, $password) {
             // validacia udajov - predchadzanie utokom
             if(strlen($email) > 45) {

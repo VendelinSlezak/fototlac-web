@@ -50,7 +50,6 @@ CREATE TABLE IF NOT EXISTS `fototlac_db`.`order` (
     ON UPDATE NO ACTION)
 ENGINE = InnoDB;
 
-
 -- -----------------------------------------------------
 -- Table `fototlac_db`.`photo_type`
 -- -----------------------------------------------------
@@ -81,8 +80,6 @@ CREATE TABLE IF NOT EXISTS `fototlac_db`.`photo` (
   `file_name` VARCHAR(255) NOT NULL,
   `copies` INT NOT NULL,
   `order_id` INT NOT NULL,
-  `size_width_in_mm` INT NOT NULL,
-  `size_height_in_mm` INT NOT NULL,
   `photo_type_id` INT NOT NULL,
   `photo_size_id` INT NOT NULL,
   PRIMARY KEY (`id`),

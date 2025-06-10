@@ -9,7 +9,7 @@
         public function error($str) {
             echo '<div class="alert alert-danger" role="alert">Chyba: ' . $str . '</div>';
         }
-
+ 
         public function doesUserExist($email, $password) {
             $stmt = $this->pdo->prepare("SELECT * FROM user WHERE email = :email");
             $stmt->bindParam(':email', $email, PDO::PARAM_STR);

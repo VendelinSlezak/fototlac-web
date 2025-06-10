@@ -8,7 +8,7 @@
                 exit;
             }
         }
-
+ 
         public function continueIfUserLoggedIn() {
             $this->continueIfLoggedIn();
             if($_SESSION['admin'] == true) {

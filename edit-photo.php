@@ -2,17 +2,12 @@
     require("partials/header.php");
 
     // skontrolujeme ci je uzivatel prihlaseny
-    if(isset($_SESSION['logged_in']) == false || $_SESSION['logged_in'] !== true) {
-        header("Location: login.php");
-        exit;
-    }
+    $auth->continueIfUserLoggedIn();
 
-    //  vytvorime spojenie s databazou
+    // vytvorime spojenie s databazou
     $db = new Database();
+    $user = new User($db);
     $userid = $_SESSION["user_id"];
-    $photo_types = $db->getPhotoTypes();
-    $orderid = $_GET['order_id'];
-    $photoid = $_GET['photo_id'];
 
     // zistime ci uzivatel chce upravit fotku
     if($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -20,55 +15,55 @@
         if (!isset($_POST['copies']) ||
             !isset($_POST['size']) ||
             !isset($_POST['paper_type']) ||
-            !isset($_POST['order_id']) ) {
+            !isset($_POST['order_id']) ||
+            !isset($_POST['photo_id'])) {
             echo "Chýbajúce údaje vo formulári";
             exit;
         }
-
         $orderid = $_POST['order_id'];
         $photoid = $_POST['photo_id'];
 
-        //TODO: skontrolovat ci je fotka v objednavke
-
-        // najst velkost fotky
-        $sizes = $db->getPhotoSizes();
-        $selectedSize = null;
-        foreach ($sizes as $size) {
-            if ($size['name'] === $_POST['size']) {
-                $selectedSize = $size;
-                break;
-            }
-        }
-        if (!$selectedSize) {
-            echo "Neznáma veľkosť fotky.";
+        // overime ci ma uzivatel pravo upravovat tuto fotku
+        $user->continueIfUserHasOrder($userid, $orderid);
+        if($user->isOrderUnfinished($userid, $orderid) == false) {
+            echo '<div class="alert alert-danger" role="alert">Táto objednávka už bola odoslaná</div>';
+            require("partials/footer.php");
             exit;
         }
-        $width = $selectedSize['width'];
-        $height = $selectedSize['height'];
+        if($user->isPhotoInOrder($orderid, $photoid) == false) {
+            echo '<div class="alert alert-danger" role="alert">Nemáte právo upravovať túto fotku</div>';
+            require("partials/footer.php");
+            exit;
+        }
 
         // aktualizovat udaje fotky
-        $status = $db->editPhotoInfo($userid, $orderid, $photoid, $_POST['copies'], $width, $height , $_POST['paper_type']);
+        $status = $user->editPhotoInfo($userid, $orderid, $photoid, $_POST['copies'], $_POST['paper_type'], $_POST['size']);
 
+        // zobrazit aktualizovanu objednavku
         $url = "Location: edit-order.php?edit_order={$orderid}";
         header($url);
         exit;
     }
+    else {
+        $orderid = $_GET['order_id'];
+        $photoid = $_GET['photo_id'];
 
-    $photo_info = $db->getPhotoInfo($userid, $orderid, $photoid);
-
-    // zistit velkost na zaklade databazy
-    $photo_sizes = $db->getPhotoSizes();
-    $photo_size = null;
-    foreach ($photo_sizes as $size) {
-        if ($size['width'] == $photo_info['size_width_in_mm']
-            && $size['height'] == $photo_info['size_height_in_mm']) {
-            $photo_size = $size['name'];
-            break;
+        // overime ci ma uzivatel pravo upravovat tuto fotku
+        $user->continueIfUserHasOrder($userid, $orderid);
+        if($user->isOrderUnfinished($userid, $orderid) == false) {
+            echo '<div class="alert alert-danger" role="alert">Táto objednávka už bola odoslaná</div>';
+            require("partials/footer.php");
+            exit;
         }
-    }
-    if (!$photo_size) {
-        $photo_size = "Neznáma veľkosť";
-        exit;
+        if($user->isPhotoInOrder($orderid, $photoid) == false) {
+            echo '<div class="alert alert-danger" role="alert">Nemáte právo upravovať túto fotku</div>';
+            require("partials/footer.php");
+            exit;
+        }
+
+        $photo_sizes = $user->getPhotoSizes();
+        $photo_types = $user->getPhotoTypes();
+        $photo_info = $user->getPhotoInfo($userid, $orderid, $photoid);
     }
 ?>
 
@@ -86,9 +81,9 @@
         <div>
             <label for="size">Veľkosť:</label>
             <select name="size" id="size">
-                <option value="A5" <?= $photo_size === "A5" ? 'selected' : '' ?>>A5</option>
-                <option value="A4" <?= $photo_size === "A4" ? 'selected' : '' ?>>A4</option>
-                <option value="A3" <?= $photo_size === "A3" ? 'selected' : '' ?>>A3</option>
+                <?php foreach ($photo_sizes as $photo_size): ?>
+                    <option value="<?= $photo_size['id'] ?>" <?= $photo_size['id'] === $photo_info['photo_size_id'] ? 'selected' : '' ?>><?= $photo_size['name'] ?></option>
+                <?php endforeach; ?>
             </select>
         </div>
 

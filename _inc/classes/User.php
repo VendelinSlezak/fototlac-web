@@ -43,18 +43,76 @@
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
 
+        public function isOrderUnfinished($userid, $orderid) {
+            $stmt = $this->pdo->prepare("SELECT state FROM `order` WHERE user_id = :user_id AND id = :order_id");
+            $stmt->bindParam(':user_id', $userid, PDO::PARAM_INT);
+            $stmt->bindParam(':order_id', $orderid, PDO::PARAM_INT);
+            $stmt->execute();
+            $state = $stmt->fetch(PDO::FETCH_ASSOC);
+            if($state['state'] == 'N') {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
+        public function isPhotoInOrder($orderid, $photoid) {
+            $stmt = $this->pdo->prepare("SELECT order_id FROM photo WHERE id = :photo_id AND order_id = :order_id");
+            $stmt->bindParam(':photo_id', $photoid, PDO::PARAM_INT);
+            $stmt->bindParam(':order_id', $orderid, PDO::PARAM_INT);
+            $stmt->execute();
+            $state = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            if(count($state) == 1) {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+
         public function getOrderPhotos($userid, $orderid) {
             if($this->haveUserIdOrderId($userid, $orderid) == false) {
                 return false;
             }
 
-            $stmt = $this->pdo->prepare("   SELECT photo.id AS photo_id, file_name, copies, size_width_in_mm, size_height_in_mm, photo_type.name AS paper_type, photo_type.price_of_1x1_mm*size_width_in_mm*size_height_in_mm*copies AS price
+            $stmt = $this->pdo->prepare("   SELECT photo.id AS photo_id, file_name, copies, photo_size.width AS size_width_in_mm, photo_size.height AS size_height_in_mm, photo_type.name AS paper_type, photo_type.price_of_1x1_mm*photo_size.width*photo_size.height*copies AS price
                                             FROM photo
                                             JOIN photo_type ON photo_type.id = photo.photo_type_id
+                                            JOIN photo_size ON photo_size.id = photo.photo_size_id
                                             WHERE order_id = :order_id");
             $stmt->bindParam(':order_id', $orderid, PDO::PARAM_INT);
             $stmt->execute();
             return $stmt->fetchAll();
+        }
+
+        public function sendOrder($userid, $orderid, $name, $surname, $country, $city, $postalCode, $street, $houseNumber) {
+            if ($this->haveUserIdOrderId($userid, $orderid) == false) {
+                return false;
+            }
+
+            $stmt = $this->pdo->prepare("
+                UPDATE `order` 
+                SET name = :name, 
+                    surname = :surname, 
+                    country = :country, 
+                    city = :city, 
+                    postal_code = :postalCode, 
+                    street = :street, 
+                    house_number = :houseNumber,
+                    state = 'O'
+                WHERE user_id = :userid AND id = :orderid
+            ");
+            $stmt->bindParam(':userid', $userid, PDO::PARAM_INT);
+            $stmt->bindParam(':orderid', $orderid, PDO::PARAM_INT);
+            $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+            $stmt->bindParam(':surname', $surname, PDO::PARAM_STR);
+            $stmt->bindParam(':country', $country, PDO::PARAM_STR);
+            $stmt->bindParam(':city', $city, PDO::PARAM_STR);
+            $stmt->bindParam(':postalCode', $postalCode, PDO::PARAM_STR);
+            $stmt->bindParam(':street', $street, PDO::PARAM_STR);
+            $stmt->bindParam(':houseNumber', $houseNumber, PDO::PARAM_STR);
+            return $stmt->execute();
         }
 
         public function createNewOrder($userid) {
@@ -96,29 +154,23 @@
             return $stmt->fetchAll();
         }
 
-        public function createNewPhoto($orderid, $photo_type_id, $photo_size_id, $file_name, $copies, $width, $height) {
+        public function createNewPhoto($orderid, $photo_type_id, $photo_size_id, $file_name, $copies) {
             $stmt = $this->pdo->prepare("INSERT INTO photo (
                 `file_name`, 
                 `copies`, 
                 `order_id`, 
-                `size_width_in_mm`, 
-                `size_height_in_mm`, 
                 `photo_type_id`,
                 `photo_size_id`
             ) VALUES (
                 :file_name, 
                 :copies, 
                 :order_id, 
-                :size_width_in_mm, 
-                :size_height_in_mm, 
                 :photo_type_id,
                 :photo_size_id
             )");
             $stmt->bindParam(':file_name', $file_name);
             $stmt->bindParam(':copies', $copies, PDO::PARAM_INT);
             $stmt->bindParam(':order_id', $orderid, PDO::PARAM_INT);
-            $stmt->bindParam(':size_width_in_mm', $width, PDO::PARAM_INT);
-            $stmt->bindParam(':size_height_in_mm', $height, PDO::PARAM_INT);
             $stmt->bindParam(':photo_type_id', $photo_type_id, PDO::PARAM_INT);
             $stmt->bindParam(':photo_size_id', $photo_size_id, PDO::PARAM_INT);
             return $stmt->execute();
@@ -133,8 +185,8 @@
             $stmt = $this->pdo->prepare("SELECT order_id FROM photo WHERE id = :photo_id");
             $stmt->bindParam(':photo_id', $photoid, PDO::PARAM_INT);
             $stmt->execute();
-            $photo_order_id = $stmt->fetch();
-            if($photo_order_id != $orderid) {
+            $photo_order_id = $stmt->fetchColumn();
+            if($photo_order_id == false || $photo_order_id != $orderid) {
                 return false;
             }
 
@@ -154,6 +206,54 @@
             $stmt = $this->pdo->prepare("DELETE FROM photo WHERE id = :photo_id");
             $stmt->bindParam(':photo_id', $photoid, PDO::PARAM_INT);
             return $stmt->execute();
+        }
+
+        public function getPhotoInfo($userid, $orderid, $photoid) {
+            if($this->haveUserIdOrderId($userid, $orderid) == false) {
+                return false;
+            }
+
+            $stmt = $this->pdo->prepare("SELECT * FROM photo JOIN photo_size ON photo_size_id = photo_size.id WHERE photo.id = :photo_id");
+            $stmt->bindParam(':photo_id', $photoid, PDO::PARAM_INT);
+            $stmt->execute();
+            return $stmt->fetch();
+        }
+
+        public function editPhotoInfo($userid, $orderid, $photoid, $copies, $photo_type_id, $photo_size_id) {
+            if($this->haveUserIdOrderId($userid, $orderid) == false) {
+                return false;
+            }
+
+            $stmt = $this->pdo->prepare("UPDATE photo 
+                                         SET copies = :copies, 
+                                             photo_type_id = :photo_type_id,
+                                             photo_size_id = :photo_size_id
+                                         WHERE id = :photo_id");
+            $stmt->bindParam(':photo_id', $photoid, PDO::PARAM_INT);
+            $stmt->bindParam(':copies', $copies, PDO::PARAM_INT);
+            $stmt->bindParam(':photo_type_id', $photo_type_id, PDO::PARAM_INT);
+            $stmt->bindParam(':photo_size_id', $photo_size_id, PDO::PARAM_INT);
+            return $stmt->execute();
+        }
+
+        public function getPhotoSizeInfo($sizeID) {
+            $photo_sizes = $this->getPhotoSizes();
+            $sizeInfo = null;
+
+            foreach($photo_sizes as $size) {
+                if ($size['id'] == $sizeID) {
+                    $sizeInfo = $size;
+                    break;
+                }
+            }
+
+            if($sizeInfo == null) {
+                echo '<div class="alert alert-danger" role="alert">Neznáma veľkosť fotky</div>';
+                require("partials/footer.php");
+                exit;
+            }
+
+            return $sizeInfo;
         }
     }
 ?>

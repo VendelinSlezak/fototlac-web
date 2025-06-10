@@ -11,7 +11,7 @@
             // pripojime sa ku databaze
             $db = new Database();
             $reg = new Registration($db);
-
+ 
             // pridame uzivatela do databazy
             try {
                 $reg->addUser($_POST['register_email'], $_POST['register_password']);

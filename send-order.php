@@ -2,37 +2,45 @@
     require("partials/header.php");
 
     // skontrolujeme ci je uzivatel prihlaseny
-    if(isset($_SESSION['logged_in']) == false || $_SESSION['logged_in'] !== true) {
-        header("Location: login.php");
-        exit;
-    }
+    $auth->continueIfUserLoggedIn();
 
     //  vytvorime spojenie s databazou
     $db = new Database();
+    $user = new User($db);
     $userid = $_SESSION["user_id"];
-    if($_SERVER['REQUEST_METHOD'] === 'GET') {
-        $orderid = $_GET['order_id'];
+
+    // overenie ci mame vsetky potrebne data
+    if($_SERVER['REQUEST_METHOD'] !== 'POST' ||
+       !isset($_POST['order_id']) ||
+       !isset($_POST['name']) ||
+       !isset($_POST['surname']) ||
+       !isset($_POST['country']) ||
+       !isset($_POST['city']) ||
+       !isset($_POST['postal_code']) ||
+       !isset($_POST['street']) ||
+       !isset($_POST['house_number']) ) {
+        echo '<div class="alert alert-danger" role="alert">Chýbajúce údaje vo formulári</div>';
+        require("partials/footer.php");
+        exit;
+    }
+    $orderid = $_POST['order_id'];
+
+    // skontrolujeme ci uzivatel ma tuto objednavku
+    $user->continueIfUserHasOrder($userid, $orderid);
+
+    // overenie ci je tato objednavka rozpracovana aby uzivatel nemenil data uz odoslanej objednavky
+    if($user->isOrderUnfinished($userid, $orderid) == false) {
+        echo '<div class="alert alert-danger" role="alert">Táto objednávka už bola odoslaná</div>';
+        require("partials/footer.php");
+        exit;
     }
 
-    // zistime ci uzivatel odosiela objednavku
-    if($_SERVER['REQUEST_METHOD'] === 'POST') {
-        // overenie ci mame vsetky potrebne data
-        if (!isset($_POST['order_id']) ||
-            !isset($_POST['name']) ||
-            !isset($_POST['surname']) ||
-            !isset($_POST['country']) ||
-            !isset($_POST['city']) ||
-            !isset($_POST['postal_code']) ||
-            !isset($_POST['street']) ||
-            !isset($_POST['house_number']) ) {
-            echo "Chýbajúce údaje vo formulári";
-            exit;
-        }
-
-        // TODO: overenie ci je tato objednavka rozpracovana
-
-        // aktualizujeme objednavku na spracovanu
-        $db->sendOrder($userid, $_POST['order_id'], $_POST['name'], $_POST['surname'], $_POST['country'], $_POST['city'], $_POST['postal_code'], $_POST['street'], $_POST['house_number']); // TODO: skontrolovat error
+    // aktualizujeme objednavku na spracovanu
+    $successSending = $user->sendOrder($userid, $_POST['order_id'], $_POST['name'], $_POST['surname'], $_POST['country'], $_POST['city'], $_POST['postal_code'], $_POST['street'], $_POST['house_number']);
+    if($successSending == false) {
+        echo '<div class="alert alert-danger" role="alert">Nepodarilo sa poslať formulár</div>';
+        require("partials/footer.php");
+        exit;
     }
 ?>
 

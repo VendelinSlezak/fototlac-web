@@ -72,7 +72,7 @@
         // vlozime fotku do databazy
         $photo_type = $_POST['paper_type'];
         $copies = $_POST['copies'];
-        $createSuccess = $user->createNewPhoto($orderid, $photo_type, $selectedSizeId, $photoName, $copies, $width, $height);
+        $createSuccess = $user->createNewPhoto($orderid, $photo_type, $_POST['size'], $photoName, $copies);
         if($createSuccess == false) {
             echo '<div class="alert alert-danger" role="alert">Chyba pri vytváraní položky v databáze</div>';
             require("partials/footer.php");

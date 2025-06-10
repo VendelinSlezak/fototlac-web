@@ -2,15 +2,14 @@
     require("partials/header.php");
 
     // skontrolujeme ci je uzivatel prihlaseny
-    if(isset($_SESSION['logged_in']) == false || $_SESSION['logged_in'] !== true) {
-        header("Location: login.php");
-        exit;
-    }
+    $auth->continueIfUserLoggedIn();
 
-    //  vytvorime spojenie s databazou
+    // vytvorime spojenie s databazou
     $db = new Database();
+    $user = new User($db);
     $userid = $_SESSION["user_id"];
     $orderid = $_GET['order_id'];
+    $user->continueIfUserHasOrder($userid, $orderid);
 ?>
 
 <h3 class="tm-gold-text tm-form-title">Vyplnte údaje</h3>
